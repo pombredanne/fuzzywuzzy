@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import sys
+import functools
 
 from fuzzywuzzy.string_processing import StringProcessor
 
@@ -9,18 +10,32 @@ PY3 = sys.version_info[0] == 3
 
 def validate_string(s):
     try:
-        if len(s) > 0:
-            return True
-        else:
-            return False
-    except:
+        return len(s) > 0
+    except TypeError:
         return False
 
-bad_chars = str('')  # ascii dammit!
-for i in range(128, 256):
-    bad_chars += chr(i)
+def check_for_none(func):
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if args[0] is None:
+            raise TypeError("s1 is None")
+        if args[1] is None:
+            raise TypeError("s2 is None")
+        return func(*args, **kwargs)
+    return decorator
+
+def check_empty_string(func):
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if len(args[0]) == 0 or len(args[1]) == 0:
+            return 0
+        return  func(*args, **kwargs)
+    return decorator
+
+bad_chars = str("").join([chr(i) for i in range(128, 256)])  # ascii dammit!
 if PY3:
     translation_table = dict((ord(c), None) for c in bad_chars)
+    unicode = str
 
 
 def asciionly(s):
@@ -40,6 +55,7 @@ def asciidammit(s):
 
 
 def make_type_consistent(s1, s2):
+    """If both objects aren't either both string or unicode instances force them to unicode"""
     if isinstance(s1, str) and isinstance(s2, str):
         return s1, s2
 
@@ -62,7 +78,7 @@ def full_process(s, force_ascii=False):
 
     if force_ascii:
         s = asciidammit(s)
-    # Keep only Letters and Numbres (see Unicode docs).
+    # Keep only Letters and Numbers (see Unicode docs).
     string_out = StringProcessor.replace_non_letters_non_numbers_with_whitespace(s)
     # Force into lowercase.
     string_out = StringProcessor.to_lower_case(string_out)

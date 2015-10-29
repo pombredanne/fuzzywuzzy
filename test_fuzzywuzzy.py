@@ -27,7 +27,7 @@ class StringProcessingTest(unittest.TestCase):
             proc_string = StringProcessor.replace_non_letters_non_numbers_with_whitespace(string)
             regex = re.compile(r"(?ui)[\W]")
             for expr in regex.finditer(proc_string):
-                self.assertEquals(expr.group(), " ")
+                self.assertEqual(expr.group(), " ")
 
     def test_dont_condense_whitespace(self):
         s1 = "new york mets - atlanta braves"
@@ -88,6 +88,7 @@ class RatioTest(unittest.TestCase):
         self.s4 = "new york mets vs atlanta braves"
         self.s5 = "atlanta braves vs new york mets"
         self.s6 = "new york mets - atlanta braves"
+        self.s7 = 'new york city mets - atlanta braves'
 
         self.cirque_strings = [
             "cirque du soleil - zarkana - las vegas",
@@ -129,7 +130,7 @@ class RatioTest(unittest.TestCase):
         self.assertEqual(fuzz.token_set_ratio(self.s4, self.s5), 100)
 
     def testPartialTokenSetRatio(self):
-        self.assertEqual(fuzz.token_set_ratio(self.s4, self.s5), 100)
+        self.assertEqual(fuzz.partial_token_set_ratio(self.s4, self.s7), 100)
 
     def testQuickRatioEqual(self):
         self.assertEqual(fuzz.QRatio(self.s1, self.s1a), 100)
@@ -262,26 +263,39 @@ class RatioTest(unittest.TestCase):
         score = fuzz._token_sort(s1, s2, force_ascii=False)
         self.assertLess(score, 100)
 
-    # test processing methods
-    def testGetBestChoice1(self):
-        query = "new york mets at atlanta braves"
-        best = process.extractOne(query, self.baseball_strings)
-        self.assertEqual(best[0], "braves vs mets")
+class ValidatorTest(unittest.TestCase):
+    def setUp(self):
+        self.testFunc = lambda *args, **kwargs: (args, kwargs)
 
-    def testGetBestChoice2(self):
-        query = "philadelphia phillies at atlanta braves"
-        best = process.extractOne(query, self.baseball_strings)
-        self.assertEqual(best[0], self.baseball_strings[2])
+    def testCheckForNone(self):
+        invalid_input = [
+            (None, None),
+            ('Some', None),
+            (None, 'Some')
+        ]
+        decorated_func = utils.check_for_none(self.testFunc)
+        for i in invalid_input:
+            self.assertRaises(TypeError, decorated_func, *i)
 
-    def testGetBestChoice3(self):
-        query = "atlanta braves at philadelphia phillies"
-        best = process.extractOne(query, self.baseball_strings)
-        self.assertEqual(best[0], self.baseball_strings[2])
+        try:
+            valid_input = ['Some', 'Some']
+            decorated_func(*valid_input)
+        except ValueError as e:
+            self.fail('check_for_none matched non-None input', valid_input, e)
 
-    def testGetBestChoice4(self):
-        query = "chicago cubs vs new york mets"
-        best = process.extractOne(query, self.baseball_strings)
-        self.assertEqual(best[0], self.baseball_strings[0])
+    def testCheckEmptyString(self):
+        invalid_input = [
+            ('', ''),
+            ('Some', ''),
+            ('', 'Some')
+        ]
+        decorated_func = utils.check_empty_string(self.testFunc)
+        for i in invalid_input:
+            self.assertEqual(decorated_func(*i), 0)
+
+        valid_input = ('Some', 'Some')
+        actual = decorated_func(*valid_input)
+        self.assertNotEqual(actual, 0)
 
 
 class ProcessTest(unittest.TestCase):
@@ -311,6 +325,27 @@ class ProcessTest(unittest.TestCase):
             "braves vs mets",
         ]
 
+    def testGetBestChoice1(self):
+        query = "new york mets at atlanta braves"
+        best = process.extractOne(query, self.baseball_strings)
+        self.assertEqual(best[0], "braves vs mets")
+
+    def testGetBestChoice2(self):
+        query = "philadelphia phillies at atlanta braves"
+        best = process.extractOne(query, self.baseball_strings)
+        self.assertEqual(best[0], self.baseball_strings[2])
+
+    def testGetBestChoice3(self):
+        query = "atlanta braves at philadelphia phillies"
+        best = process.extractOne(query, self.baseball_strings)
+        self.assertEqual(best[0], self.baseball_strings[2])
+
+    def testGetBestChoice4(self):
+        query = "chicago cubs vs new york mets"
+        best = process.extractOne(query, self.baseball_strings)
+        self.assertEqual(best[0], self.baseball_strings[0])
+
+
     def testWithProcessor(self):
         events = [
             ["chicago cubs vs new york mets", "CitiField", "2011-05-11", "8pm"],
@@ -331,6 +366,13 @@ class ProcessTest(unittest.TestCase):
             "new york yankees vs boston red sox"
         ]
 
+        choices_dict = {
+            1: "new york mets vs chicago cubs",
+            2: "chicago cubs vs chicago white sox",
+            3: "philladelphia phillies vs atlanta braves",
+            4: "braves vs mets"
+        }
+
         # in this hypothetical example we care about ordering, so we use quick ratio
         query = "new york mets at chicago cubs"
         scorer = fuzz.QRatio
@@ -345,6 +387,9 @@ class ProcessTest(unittest.TestCase):
 
         best = process.extractOne(query, choices, scorer=scorer)
         self.assertEqual(best[0], choices[0])
+
+        best = process.extractOne(query, choices_dict)
+        self.assertEqual(best[0], choices_dict[1])
 
     def testWithCutoff(self):
         choices = [
@@ -361,12 +406,27 @@ class ProcessTest(unittest.TestCase):
 
         best = process.extractOne(query, choices, score_cutoff=50)
         self.assertTrue(best is None)
-        #self.assertIsNone(best) # unittest.TestCase did not have assertIsNone until Python 2.7
+        # self.assertIsNone(best) # unittest.TestCase did not have assertIsNone until Python 2.7
 
         # however if we had no cutoff, something would get returned
 
-        #best = process.extractOne(query, choices)
-        #self.assertIsNotNone(best)
+        # best = process.extractOne(query, choices)
+        # self.assertIsNotNone(best)
+
+    def testWithCutoff2(self):
+        choices = [
+            "new york mets vs chicago cubs",
+            "chicago cubs at new york mets",
+            "atlanta braves vs pittsbugh pirates",
+            "new york yankees vs boston red sox"
+        ]
+
+        query = "new york mets vs chicago cubs"
+        # Only find 100-score cases
+        res = process.extractOne(query, choices, score_cutoff=100)
+        self.assertTrue(res is not None)
+        best_match, score = res
+        self.assertTrue(best_match is choices[0])
 
     def testEmptyStrings(self):
         choices = [
@@ -395,6 +455,50 @@ class ProcessTest(unittest.TestCase):
 
         best = process.extractOne(query, choices)
         self.assertEqual(best[0], choices[1])
+
+    def test_list_like_extract(self):
+        """We should be able to use a list-like object for choices."""
+        def generate_choices():
+            choices = ['a', 'Bb', 'CcC']
+            for choice in choices:
+                yield choice
+        search = 'aaa'
+        result = [(value, confidence) for value, confidence in
+                  process.extract(search, generate_choices())]
+        self.assertTrue(len(result) > 0)
+
+    def test_dict_like_extract(self):
+        """We should be able to use a dict-like object for choices, not only a
+        dict, and still get dict-like output.
+        """
+        try:
+            from UserDict import UserDict
+        except ImportError:
+            from collections import UserDict
+        choices = UserDict({'aa': 'bb', 'a1': None})
+        search = 'aaa'
+        result = process.extract(search, choices)
+        self.assertTrue(len(result) > 0)
+        for value, confidence, key in result:
+            self.assertTrue(value in choices.values())
+
+    def test_dedupe(self):
+        """We should be able to use a list-like object for contains_dupes
+        """
+        # Test 1
+        contains_dupes = ['Frodo Baggins', 'Tom Sawyer', 'Bilbo Baggin', 'Samuel L. Jackson', 'F. Baggins', 'Frody Baggins', 'Bilbo Baggins']
+
+        result = process.dedupe(contains_dupes)
+        self.assertTrue(len(result) < len(contains_dupes))
+
+        # Test 2
+        contains_dupes = ['Tom', 'Dick', 'Harry']
+
+        # we should end up with the same list since no duplicates are contained in the list (e.g. original list is returned)
+        deduped_list = ['Tom', 'Dick', 'Harry']
+
+        result = process.dedupe(contains_dupes)
+        self.assertEqual(result, deduped_list)
 
 
 if __name__ == '__main__':
