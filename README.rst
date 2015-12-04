@@ -3,7 +3,7 @@
 FuzzyWuzzy
 ==========
 
-Fuzzy string matching like a boss.
+Fuzzy string matching like a boss. It uses [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) to help calculate differences between sequences in a simple to use package.
 
 Requirements
 ============
@@ -26,13 +26,13 @@ Using PIP via Github
 
 .. code:: bash
 
-    pip install git+git://github.com/seatgeek/fuzzywuzzy.git@0.7.0#egg=fuzzywuzzy
+    pip install git+git://github.com/seatgeek/fuzzywuzzy.git@0.8.0#egg=fuzzywuzzy
 
 Adding to your ``requirements.txt`` file (run ``pip install -r requirements.txt`` afterwards)
 
 .. code:: bash
 
-    git+ssh://git@github.com/seatgeek/fuzzywuzzy.git@0.7.0#egg=fuzzywuzzy
+    git+ssh://git@github.com/seatgeek/fuzzywuzzy.git@0.8.0#egg=fuzzywuzzy
     
 Manually via GIT
 
