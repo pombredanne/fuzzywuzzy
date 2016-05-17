@@ -1,6 +1,31 @@
 Changelog
 =========
 
+0.10.0 (2016-03-13)
+-------------------
+
+- Handle None inputs same as empty string (Issue #94) [Nick Miller]
+
+0.9.0 (2016-03-07)
+------------------
+
+- Pull down all keys when updating local copy. [Jose Diaz-Gonzalez]
+
+0.8.2 (2016-02-26)
+------------------
+
+- Remove the warning for "slow" sequence matcher on PyPy. [Julian
+  Berman]
+
+  where it's preferable to use the pure-python implementation.
+
+0.8.1 (2016-01-25)
+------------------
+
+- Minor release changes. [Jose Diaz-Gonzalez]
+
+- Clean up wiki link in readme. [Ewan Oglethorpe]
+
 0.8.0 (2015-11-16)
 ------------------
 

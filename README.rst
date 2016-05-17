@@ -3,7 +3,7 @@
 FuzzyWuzzy
 ==========
 
-Fuzzy string matching like a boss. It uses [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) to help calculate differences between sequences in a simple to use package.
+Fuzzy string matching like a boss. It uses `Levenshtein Distance <https://en.wikipedia.org/wiki/Levenshtein_distance>`_ to calculate the differences between sequences in a simple-to-use package.
 
 Requirements
 ============
@@ -26,13 +26,13 @@ Using PIP via Github
 
 .. code:: bash
 
-    pip install git+git://github.com/seatgeek/fuzzywuzzy.git@0.8.0#egg=fuzzywuzzy
+    pip install git+git://github.com/seatgeek/fuzzywuzzy.git@0.10.0#egg=fuzzywuzzy
 
 Adding to your ``requirements.txt`` file (run ``pip install -r requirements.txt`` afterwards)
 
 .. code:: bash
 
-    git+ssh://git@github.com/seatgeek/fuzzywuzzy.git@0.8.0#egg=fuzzywuzzy
+    git+ssh://git@github.com/seatgeek/fuzzywuzzy.git@0.10.0#egg=fuzzywuzzy
     
 Manually via GIT
 
@@ -57,7 +57,7 @@ Simple Ratio
 .. code:: python
 
     >>> fuzz.ratio("this is a test", "this is a test!")
-        96
+        97
 
 Partial Ratio
 ~~~~~~~~~~~~~
@@ -73,7 +73,7 @@ Token Sort Ratio
 .. code:: python
 
     >>> fuzz.ratio("fuzzy wuzzy was a bear", "wuzzy fuzzy was a bear")
-        90
+        91
     >>> fuzz.token_sort_ratio("fuzzy wuzzy was a bear", "wuzzy fuzzy was a bear")
         100
 
@@ -103,6 +103,7 @@ Process
 
 Known Ports
 ============
-Some people are porting FuzzyWuzzy to other languages. Here is one port we know about:
+
+FuzzyWuzzy is being ported to other languages too! Here is one port we know about:
 
 -  Java: https://github.com/WantedTechnologies/xpresso/wiki/Approximate-string-comparison-and-pattern-matching-in-Java
